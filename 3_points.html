@@ -35,6 +35,12 @@
         const $ = document.querySelector.bind( document )
         const canvas = $('#gl')
         const gl = canvas.getContext('webgl')
+        const width = canvas.width
+        const height = canvas.height
+
+        canvas.addEventListener( 'mousedown', evt => {
+            drawPoint(evt)
+        })
 
         function createShader(type, source) {
             const shader = gl.createShader(type)
@@ -59,28 +65,41 @@
             gl.deleteProgram(program)
         }
 
-        function drawPoint() {
+        const points = []
+
+        function drawPoint(evt) {
+            const {
+                offsetX,
+                offsetY
+            } = evt
+            points.push({
+                x: offsetX / width * 2 - 1,
+                y: 1 - offsetY / height * 2,
+                cor: new Float32Array([Math.random(), Math.random(), Math.random(), 1.0])
+            })
+
             const vertexShaderSource = $('#vertex_shader-1').text
             const fragmentShaderSource = $('#fragment_shader-1').text
             const vertexShader = createShader( gl.VERTEX_SHADER, vertexShaderSource )
             const fragmentShader = createShader( gl.FRAGMENT_SHADER, fragmentShaderSource )
             const program = createProgram( vertexShader, fragmentShader )
             gl.useProgram(program)
-            const positionAttrLocation = gl.getAttribLocation(program, 'a_position')
-            // gl.vertexAttrib3f(positionAttrLocation, 0.5, 0.5, 0) // way 1: set value of attribute
-            const pos = new Float32Array([0.5, 0.5, 0])
-            gl.vertexAttrib3fv(positionAttrLocation, pos)
 
-            const pointsizeAttrLocation = gl.getAttribLocation(program, 'a_pointsize')
-            gl.vertexAttrib1f(pointsizeAttrLocation, 60.0)
+            for (const p of points) {
+                const { x, y, cor } = p
+                const positionAttrLocation = gl.getAttribLocation(program, 'a_position')
+                const pos = new Float32Array([x, y, 0])
+                gl.vertexAttrib3fv(positionAttrLocation, pos)
 
-            const fragcorLocation = gl.getUniformLocation(program, 'u_fragcor')
-            gl.uniform4f(fragcorLocation, 1.0, 0.5, 0.0, 1.0)
-            gl.drawArrays(gl.POINTS, 0, 1)
+                const pointsizeAttrLocation = gl.getAttribLocation(program, 'a_pointsize')
+                gl.vertexAttrib1f(pointsizeAttrLocation, 6.0)
+
+                const fragcorLocation = gl.getUniformLocation(program, 'u_fragcor')
+                gl.uniform4fv(fragcorLocation, cor)
+                gl.drawArrays(gl.POINTS, 0, 1)
+            }
+
         }
-
-        drawPoint()
-
     </script>
 </body>
 </html>
