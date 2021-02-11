@@ -67,8 +67,8 @@
             const buf = gl.createBuffer()
             const vertices = new Float32Array([
                 -0.5, 0.5, 0,
-                0.5, 0.5, 0,
                 -0.5, -0.5, 0,
+                0.5, 0.5, 0,
                 0.5, -0.5, 0
             ])
             gl.bindBuffer(gl.ARRAY_BUFFER, buf)
@@ -77,7 +77,7 @@
             gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0)
             gl.enableVertexAttribArray(a_position)
 
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
         }
         drawRect()
     </script>
