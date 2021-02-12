@@ -56,7 +56,7 @@
             gl.deleteProgram(program)
         }
 
-        function drawTriangles() {
+        function drawTranslatedTri() {
             const vertexShaderSource = $('#vertex_shader-1').text
             const fragmentShaderSource = $('#fragment_shader-1').text
             const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource)
@@ -81,7 +81,7 @@
 
             gl.drawArrays(gl.TRIANGLES, 0, 3)
         }
-        drawTriangles()
+        drawTranslatedTri()
     </script>
 </body>
 </html>
