@@ -16,17 +16,23 @@
 
     <script id="vertex_shader-1" type="notjs">
         attribute vec4 a_position;
+
         void main() {
             gl_Position = a_position;
             gl_PointSize = 10.0;
         }
     </script>
     <script id="fragment_shader-1" type="notjs">
+        precision mediump float;
+        uniform float u_width;
+        uniform float u_height;
+
         void main() {
-            gl_FragColor = vec4(1, 0, 0, 1);
+            gl_FragColor = vec4(gl_FragCoord.x/u_width, gl_FragCoord.y/u_height, 0.0, 1.0); 
+            // gl_FragCoord是每个片元的坐标
+            // 根据片元坐标设置颜色
         }
     </script>
-      
 
     <script>
         const $ = document.querySelector.bind( document )
@@ -65,19 +71,24 @@
             const program = createProgram( vertexShader, fragmentShader )
             gl.useProgram(program)
 
-            const buf = gl.createBuffer() // create buffer
+            const buf = gl.createBuffer()
             const vertices = new Float32Array([
-                0.0, 0.5, 0,
-                -0.5, -0.5, 0,
-                0.5, -0.5, 0
+                0.0, 0.5,
+                -0.5, -0.5,
+                0.5, -0.5
             ])
-            gl.bindBuffer(gl.ARRAY_BUFFER, buf) // bind buffer to gl.ARRAY_BUFFER
+            gl.bindBuffer(gl.ARRAY_BUFFER, buf)
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
             const a_position = gl.getAttribLocation(program, 'a_position')
-            gl.vertexAttribPointer(a_position, 3 /* 每个顶点的分量个数：1-4 */, gl.FLOAT, false, 0, 0)
+            gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0)
             gl.enableVertexAttribArray(a_position)
 
-            gl.drawArrays(gl.POINTS, 0, 3)
+            const u_width = gl.getUniformLocation(program, 'u_width')
+            const u_height = gl.getUniformLocation(program, 'u_height')
+            gl.uniform1f(u_width, gl.drawingBufferWidth)
+            gl.uniform1f(u_height, gl.drawingBufferHeight)
+
+            gl.drawArrays(gl.TRIANGLES, 0, 3)
         }
 
         drawMutiPoints()

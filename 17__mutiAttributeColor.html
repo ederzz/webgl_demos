@@ -16,17 +16,23 @@
 
     <script id="vertex_shader-1" type="notjs">
         attribute vec4 a_position;
+        attribute vec4 a_color;
+        varying vec4 v_color;
+
         void main() {
             gl_Position = a_position;
             gl_PointSize = 10.0;
+            v_color = a_color;
         }
     </script>
     <script id="fragment_shader-1" type="notjs">
+        precision mediump float;
+        varying vec4 v_color;
+
         void main() {
-            gl_FragColor = vec4(1, 0, 0, 1);
+            gl_FragColor = v_color;
         }
     </script>
-      
 
     <script>
         const $ = document.querySelector.bind( document )
@@ -65,19 +71,24 @@
             const program = createProgram( vertexShader, fragmentShader )
             gl.useProgram(program)
 
-            const buf = gl.createBuffer() // create buffer
+            const buf = gl.createBuffer()
             const vertices = new Float32Array([
-                0.0, 0.5, 0,
-                -0.5, -0.5, 0,
-                0.5, -0.5, 0
+                0.0, 0.5, 1.0, 0.0, 0.0,
+                -0.5, -0.5, 0.0, 1.0, 0.0,
+                0.5, -0.5, 0.0, 0.0, 1.0
             ])
-            gl.bindBuffer(gl.ARRAY_BUFFER, buf) // bind buffer to gl.ARRAY_BUFFER
+            const FSIZE = vertices.BYTES_PER_ELEMENT
+            gl.bindBuffer(gl.ARRAY_BUFFER, buf)
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
             const a_position = gl.getAttribLocation(program, 'a_position')
-            gl.vertexAttribPointer(a_position, 3 /* 每个顶点的分量个数：1-4 */, gl.FLOAT, false, 0, 0)
+            gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 5 * FSIZE /* 相邻顶点间的字节数 */, 0/* 数据项距离首个元素的距离 */)
             gl.enableVertexAttribArray(a_position)
 
-            gl.drawArrays(gl.POINTS, 0, 3)
+            const a_color = gl.getAttribLocation(program, 'a_color')
+            gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, 5 * FSIZE, 2 * FSIZE)
+            gl.enableVertexAttribArray(a_color)
+
+            gl.drawArrays(gl.TRIANGLES, 0, 3)
         }
 
         drawMutiPoints()

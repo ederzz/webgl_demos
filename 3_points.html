@@ -49,7 +49,7 @@
             const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS) 
             if (success) return shader
 
-            console.log('shader status fail: ', gl.getShaderInfoLog(shader))
+            console.error('shader status fail: ', gl.getShaderInfoLog(shader))
             gl.deleteShader(shader)
         }
 
@@ -61,7 +61,7 @@
             const success = gl.getProgramParameter(program, gl.LINK_STATUS)
             if (success) return program
 
-            console.log('get program fail: ', gl.getProgramInfoLog(program))
+            console.error('get program fail: ', gl.getProgramInfoLog(program))
             gl.deleteProgram(program)
         }
 
