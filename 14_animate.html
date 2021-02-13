@@ -58,38 +58,52 @@
             gl.deleteProgram(program)
         }
 
-        function drawTriangles() {
-            const vertexShaderSource = $('#vertex_shader-1').text
-            const fragmentShaderSource = $('#fragment_shader-1').text
-            const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource)
-            const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
+        const vertexShaderSource = $('#vertex_shader-1').text
+        const fragmentShaderSource = $('#fragment_shader-1').text
+        const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource)
+        const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentShaderSource)
 
-            const program = createProgram(vertexShader, fragmentShader)
-            gl.useProgram(program)
+        const program = createProgram(vertexShader, fragmentShader)
+        gl.useProgram(program)
 
-            const buf = gl.createBuffer()
-            const vertices = new Float32Array([
-                0.0, 0.5, 0,
-                0.5, -0.5, 0,
-                -0.5, -0.5, 0
-            ])
-            gl.bindBuffer(gl.ARRAY_BUFFER, buf)
-            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
-            const a_position = gl.getAttribLocation(program, 'a_position')
-            gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0)
-            gl.enableVertexAttribArray(a_position)
+        const buf = gl.createBuffer()
+        const vertices = new Float32Array([
+            0.0, 0.1, 0,
+            0.1, -0.1, 0,
+            -0.1, -0.1, 0
+        ])
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
+        const a_position = gl.getAttribLocation(program, 'a_position')
+        gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0)
+        gl.enableVertexAttribArray(a_position)
 
-            const matrix = new Matrix4()
-            matrix.setRotate(30, 0, 0) // secondly
-            matrix.translate(.2, 0, 0) // firstly
-            matrix.scale(.2, 0.2, 1)
+        const matrix = new Matrix4()
+        let angle = 0
+        const ANGLE_STEP = 45
+        const INTERVAL = 1e3
+
+        let lastT = performance.now()
+
+        function draw() {
+            matrix.setRotate(angle, 0, 0)
             const u_matrix = gl.getUniformLocation(program, 'u_matrix')
             gl.uniformMatrix4fv(u_matrix, false, matrix.elements)
-
             gl.drawArrays(gl.TRIANGLES, 0, 3)
         }
 
-        drawTriangles()
+        function tick(t) {
+            if (t - lastT >= INTERVAL) {
+                angle += ANGLE_STEP
+                lastT = t
+                draw()
+            }
+
+            requestAnimationFrame( tick )
+        }
+
+        draw()
+        tick()
     </script>
 </body>
 </html>
