@@ -74,7 +74,7 @@
             gl.useProgram(program)
 
             const viewMat = new Matrix4()
-            viewMat.setLookAt(0.25, 0.25, 0.25, 0, 0, 0, 0, 1, 0)
+            viewMat.setLookAt(0.25, 0.25, 0.25, 0, 0, 0, 0, 1, 0) // 设置视点，目标观察点、上方向
             const u_viewMat = gl.getUniformLocation(program, 'u_viewmat')
             gl.uniformMatrix4fv(u_viewMat, false, viewMat.elements)
 

@@ -16,24 +16,27 @@
 
     <script id="vertex_shader-1" type="notjs">
         attribute vec4 a_position;
-        attribute vec2 a_texCoord;
-        varying vec2 v_texCoord;
+        attribute vec4 a_color;
+        varying vec4 v_color;
+        uniform mat4 u_viewmat;
+        uniform mat4 u_modelmat;
 
         void main() {
-            gl_Position = a_position;
-            v_texCoord = a_texCoord;
+            gl_Position = u_viewmat * u_modelmat * a_position;
+            gl_PointSize = 10.0;
+            v_color = a_color;
         }
     </script>
     <script id="fragment_shader-1" type="notjs">
         precision mediump float;
-        varying vec2 v_texCoord;
-        uniform sampler2D u_sampler;
+        varying vec4 v_color; // 插值后的v_color值
 
         void main() {
-            gl_FragColor = texture2D(u_sampler, v_texCoord);
+            gl_FragColor = v_color;
         }
     </script>
 
+    <script src="./cuon-matrix.js"></script>
     <script>
         const $ = document.querySelector.bind( document )
         const canvas = $('#gl')
@@ -62,7 +65,7 @@
             gl.deleteProgram(program)
         }
 
-        function drawTexture() {
+        function drawMutiPoints() {
             const vertexShaderSource = $('#vertex_shader-1').text
             const fragmentShaderSource = $('#fragment_shader-1').text
             const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource)
@@ -71,53 +74,45 @@
             const program = createProgram( vertexShader, fragmentShader )
             gl.useProgram(program)
 
+            const viewMat = new Matrix4()
+            viewMat.setLookAt(0.25, 0.25, 0.25, 0, 0, 0, 0, 1, 0)
+            const u_viewMat = gl.getUniformLocation(program, 'u_viewmat')
+            gl.uniformMatrix4fv(u_viewMat, false, viewMat.elements)
+
+            const modelMat = new Matrix4()
+            modelMat.setRotate(-10, 0, 0, 1) // 以原点：0, 0, 0 到 视点：0, 0, 1的轴饶 -10 度
+            const u_modelMat = gl.getUniformLocation(program, 'u_modelmat')
+            gl.uniformMatrix4fv(u_modelMat, false, modelMat.elements)
+
             const buf = gl.createBuffer()
-            const verticesTexCoords = new Float32Array([
-                -0.5, 0.5, 0.0, 1.0,
-                -0.5, -0.5, 0.0, 0.0,
-                0.5, 0.5, 1.0, 1.0,
-                0.5, -0.5, 1.0, 0.0
+            const vertices = new Float32Array([
+                0.0, 0.5, -0.4, 0.4, 1.0, 0.4,
+                -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+                0.5, -0.5, -0.4, 1.0, 0.4, 0.4,
+
+                0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
+                -0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
+                0.0, -0.6, -0.2, 1.0, 1.0, 0.4,
+
+                0.0, 0.5, 0.0, 0.4, 0.4, 1.0,
+                -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
+                0.5, -0.5, 0.0, 1.0, 0.4, 0.4
             ])
-            const FSIZE = verticesTexCoords.BYTES_PER_ELEMENT
+            const FSIZE = vertices.BYTES_PER_ELEMENT
             gl.bindBuffer(gl.ARRAY_BUFFER, buf)
-            gl.bufferData(gl.ARRAY_BUFFER, verticesTexCoords, gl.STATIC_DRAW)
-
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
             const a_position = gl.getAttribLocation(program, 'a_position')
-            gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 4 * FSIZE, 0)
+            gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 6 * FSIZE /* 相邻顶点间的字节数 */, 0/* 数据项距离首个元素的距离 */)
             gl.enableVertexAttribArray(a_position)
-            const a_texCoord = gl.getAttribLocation(program, 'a_texCoord')
-            gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, 4 * FSIZE, 2 * FSIZE)
-            gl.enableVertexAttribArray(a_texCoord)
 
-            const image = new Image()
-            image.src = './texture.jpeg'
-            image.onload = () => {
-                loadTexture(image)
-            }
+            const a_color = gl.getAttribLocation(program, 'a_color')
+            gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, 6 * FSIZE, 3 * FSIZE)
+            gl.enableVertexAttribArray(a_color)
 
-            function loadTexture(image) {
-                const texture = gl.createTexture()
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1)
-                gl.activeTexture(gl.TEXTURE0)
-                gl.bindTexture(gl.TEXTURE_2D/* 二维纹理或立方体纹理 */, texture) // 开启纹理对象并绑定到纹理单元
-
-                // https://xieguanglei.github.io/blog/post/webgl-texture.html
-
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image) // 将image图像绑定到纹理对象上
-
-                const u_sampler = gl.getUniformLocation(program, 'u_sampler')
-                gl.uniform1i(u_sampler, 0)
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-            }
-
+            gl.drawArrays(gl.TRIANGLES, 0, 9)
         }
 
-        drawTexture()
+        drawMutiPoints()
     </script>
 </body>
 </html>
