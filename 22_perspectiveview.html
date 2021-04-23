@@ -19,10 +19,10 @@
         attribute vec4 a_color;
         varying vec4 v_color;
         uniform mat4 u_viewmat;
-        uniform mat4 u_modelmat;
+        uniform mat4 u_projmat;
 
         void main() {
-            gl_Position = u_viewmat * u_modelmat * a_position; // 执行变换的顺序是：u_modelmat => u_viewmat
+            gl_Position = u_projmat * u_viewmat * a_position;
             gl_PointSize = 10.0;
             v_color = a_color;
         }
@@ -74,29 +74,43 @@
             const program = createProgram( vertexShader, fragmentShader )
             gl.useProgram(program)
 
-            const viewMat = new Matrix4()
-            viewMat.setLookAt(0.25, 0.25, 0.25, 0, 0, 0, 0, 1, 0)
+            const viewMat = new Matrix4() // 视图矩阵 定义观察者
+            viewMat.setLookAt(0, 0, 5, 0, 0, -100, 0, 1, 0)
             const u_viewMat = gl.getUniformLocation(program, 'u_viewmat')
             gl.uniformMatrix4fv(u_viewMat, false, viewMat.elements)
 
-            const modelMat = new Matrix4() // 模型矩阵 定义变换：平移旋转
-            modelMat.setRotate(-10, 0, 0, 1) // 以原点：0, 0, 0 到 视点：0, 0, 1的轴饶 -10 度
-            const u_modelMat = gl.getUniformLocation(program, 'u_modelmat')
-            gl.uniformMatrix4fv(u_modelMat, false, modelMat.elements)
+            const projMat = new Matrix4() // 投影矩阵 定义可视空间 只有处在可视空间内的物体才能被绘制
+            projMat.setPerspective(30, canvas.width / canvas.height, 1, 100) // 可是空间顶面和底面间的夹角，近裁剪面的宽高比，近裁剪面位置，远裁剪面的位置
+            const u_projmat = gl.getUniformLocation(program, 'u_projmat')
+            gl.uniformMatrix4fv(u_projmat, false, projMat.elements)
 
             const buf = gl.createBuffer()
             const vertices = new Float32Array([
-                0.0, 0.5, -0.4, 0.4, 1.0, 0.4,
-                -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
-                0.5, -0.5, -0.4, 1.0, 0.4, 0.4,
+                // 右侧
+                0.75, 1.0, -4.0, 0.4, 1.0, 0.4,
+                0.25, -1.0, -4.0, 0.4, 1.0, 0.4,
+                1.25, -1.0, -4.0, 1.0, 0.4, 0.4,
 
-                0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
-                -0.5, 0.4, -0.2, 1.0, 0.4, 0.4,
-                0.0, -0.6, -0.2, 1.0, 1.0, 0.4,
+                0.75, 1.0, -2.0, 1.0, 1.0, 0.4,
+                0.25, -1.0, -2.0, 1.0, 1.0, 0.4,
+                1.25, -1.0, -2.0, 1.0, 0.4, 0.4,
 
-                0.0, 0.5, 0.0, 0.4, 0.4, 1.0,
-                -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
-                0.5, -0.5, 0.0, 1.0, 0.4, 0.4
+                0.75, 1.0, 0.0, 0.4, 0.4, 1.0,
+                0.25, -1.0, 0.0, 0.4, 0.4, 1.0,
+                1.25, -1.0, 0.0, 1.0, 0.4, 0.4,
+
+                // 左侧
+                -0.75, 1.0, -4.0, 0.4, 1.0, 0.4,
+                -1.25, -1.0, -4.0, 0.4, 1.0, 0.4,
+                -0.25, -1.0, -4.0, 1.0, 0.4, 0.4,
+
+                -0.75, 1.0, -2.0, 1.0, 1.0, 0.4,
+                -1.25, -1.0, -2.0, 1.0, 1.0, 0.4,
+                -0.25, -1.0, -2.0, 1.0, 0.4, 0.4,
+
+                -0.75, 1.0, 0.0, 0.4, 0.4, 1.0,
+                -1.25, -1.0, 0.0, 0.4, 0.4, 1.0,
+                -0.25, -1.0, 0.0, 1.0, 0.4, 0.4
             ])
             const FSIZE = vertices.BYTES_PER_ELEMENT
             gl.bindBuffer(gl.ARRAY_BUFFER, buf)
@@ -109,7 +123,7 @@
             gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, 6 * FSIZE, 3 * FSIZE)
             gl.enableVertexAttribArray(a_color)
 
-            gl.drawArrays(gl.TRIANGLES, 0, 9)
+            gl.drawArrays(gl.TRIANGLES, 0, 18)
         }
 
         drawMutiPoints()
