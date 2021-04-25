@@ -23,7 +23,6 @@
 
         void main() {
             gl_Position = u_viewmat * u_modelmat * a_position; // 执行变换的顺序是：u_modelmat => u_viewmat
-            gl_PointSize = 10.0;
             v_color = a_color;
         }
     </script>

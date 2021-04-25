@@ -17,12 +17,18 @@
     <script id="vertex_shader-1" type="notjs">
         attribute vec4 a_position;
         attribute vec4 a_color;
+        attribute vec4 a_normal; // 法向量
         varying vec4 v_color;
         uniform mat4 u_mvpmat;
+        uniform vec3 u_lightColor; // 光线颜色
+        uniform vec3 u_lightDirection; // 世界坐标：光线方向
 
         void main() {
+            vec3 normal = normalize(vec3(a_normal));
+            float nDotL = max(dot(u_lightDirection, normal), 0.0); // 光线方向 * 法向量
+            vec3 diffuse = u_lightColor * vec3(a_color) * nDotL;
             gl_Position = u_mvpmat * a_position;
-            v_color = a_color;
+            v_color = vec4(diffuse, a_color.a);
         }
     </script>
     <script id="fragment_shader-1" type="notjs">
@@ -90,12 +96,18 @@
                 1.0, -1.0, -1.0,  -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0
             ])
             const colors = new Float32Array([ // 每个顶点有单独颜色
-                0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0,
-                0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 
-                1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 
-                1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 
-                1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 
-                0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
+                // 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0,
+                // 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 
+                // 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 
+                // 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 
+                // 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 
+                // 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 
             ])
 
             gl.bindBuffer(gl.ARRAY_BUFFER, buf)
@@ -110,6 +122,30 @@
             const a_color = gl.getAttribLocation(program, 'a_color')
             gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, 0 /* 相邻顶点间的字节数 */, 0/* 数据项距离首个元素的距离 */)
             gl.enableVertexAttribArray(a_color)
+
+            const u_lightColor = gl.getUniformLocation(program, 'u_lightColor')
+            const u_lightDirection = gl.getUniformLocation(program, 'u_lightDirection')
+            gl.uniform3f(u_lightColor, 1.0, 1.0, 1.0)
+
+            const lightDirection = new Vector3([ 0.5, 3.0, 4.0 ])
+            lightDirection.normalize()
+            gl.uniform3f(u_lightDirection, ...lightDirection.elements)
+
+            const normals = new Float32Array([ // 法向量
+                0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+                1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 
+                0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 
+                -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 
+                0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 
+                0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0
+            ])
+
+            const normalBuf = gl.createBuffer()
+            gl.bindBuffer(gl.ARRAY_BUFFER, normalBuf)
+            gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW)
+            const a_normal = gl.getAttribLocation(program, 'a_normal')
+            gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 0 /* 相邻顶点间的字节数 */, 0/* 数据项距离首个元素的距离 */)
+            gl.enableVertexAttribArray(a_normal)
 
             const indices = new Uint8Array([
                 0, 1, 2, 0, 2, 3,
