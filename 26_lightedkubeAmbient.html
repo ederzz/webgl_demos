@@ -22,13 +22,15 @@
         uniform mat4 u_mvpmat;
         uniform vec3 u_lightColor; // 光线颜色
         uniform vec3 u_lightDirection; // 世界坐标：光线方向
+        uniform vec3 u_ambientLight;
 
         void main() {
             vec3 normal = normalize(vec3(a_normal));
             float nDotL = max(dot(u_lightDirection, normal), 0.0); // 光线方向 * 法向量
             vec3 diffuse = u_lightColor * vec3(a_color) * nDotL;
-            gl_Position = u_mvpmat * a_position; // 环境光的反射光
-            v_color = vec4(diffuse, a_color.a);
+            gl_Position = u_mvpmat * a_position;
+            vec3 ambient = u_ambientLight * a_color.rgb;
+            v_color = vec4(diffuse + ambient, a_color.a);
         }
     </script>
     <script id="fragment_shader-1" type="notjs">
@@ -158,6 +160,10 @@
             const indexBuf = gl.createBuffer()
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuf)
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW)
+
+            // 环境光
+            const u_ambientLight = gl.getUniformLocation(program, 'u_ambientLight')
+            gl.uniform3f(u_ambientLight, 0.2, 0.2, 0.2)
 
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
             gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0)
